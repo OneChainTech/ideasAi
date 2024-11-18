@@ -13,6 +13,11 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # 确保上传文件夹存在
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# 从环境变量中获取 OpenAI API 密钥
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if openai_api_key is None:
+    raise ValueError("请设置环境变量 OPENAI_API_KEY")
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     # 检查请求中是否有文件
