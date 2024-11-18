@@ -57,4 +57,4 @@ def upload_file():
     return jsonify({"image_url": image_url, "description": response.choices[0].message['content']})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=8000)
