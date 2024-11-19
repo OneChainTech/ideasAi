@@ -48,41 +48,32 @@ app.post('/upload', upload.single('file'), async (req, res) => {
             },
         });
 
-        // 打印出从 OpenAI API 返回的响应
-        console.log(response.data);
+        // AI返回的数据转换为jsMind支持的数据格式
+        const mindmapData = response.data.choices[0].message.content;
 
-        // AI返回的数据转换为Mermaid格式
-        const mermaidData = response.data.choices[0].message.content;
+        // 创建一个新的 JSDOM 实例来模拟浏览器环境
+        const dom = new JSDOM(`<!DOCTYPE html><body><div id="jsmind_container"></div></body>`);
+        global.document = dom.window.document;
 
-        // 将Mermaid数据写入临时文件
-        const mermaidFilePath = path.join(UPLOAD_FOLDER, `${req.file.filename}.mmd`);
-        fs.writeFileSync(mermaidFilePath, mermaidData, 'utf8');
+        // 初始化 jsMind
+        const options = {
+            container: 'jsmind_container',
+            theme: 'primary',
+            editable: false
+        };
+        const jm = new jsMind(options);
+        jm.show(mindmapData);
 
-        // 生成SVG文件的路径
-        const svgFilePath = path.join(UPLOAD_FOLDER, `${req.file.filename}.svg`);
+        // 获取思维导图的 SVG 内容
+        const svgContent = jm.get_svg();
 
-        // 使用 mermaid-cli 生成SVG
-        exec(`npx mmdc -i ${mermaidFilePath} -o ${svgFilePath}`, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`生成流程图时出错: ${error.message}`);
-                return res.status(500).json({
-                    error: '生成流程图时出错',
-                    details: stderr || error.message,
-                    mermaidData,
-                });
-            }
-            if (stderr) {
-                console.error(`stderr: ${stderr}`);
-                // 根据需要决定是否将stderr视为错误
-            }
+        // 将SVG内容写入文件
+        const mindmapFilePath = path.join(UPLOAD_FOLDER, `${req.file.filename}.svg`);
+        fs.writeFileSync(mindmapFilePath, svgContent);
 
-            // 可选：删除临时的Mermaid文件
-            fs.unlinkSync(mermaidFilePath);
-
-            // 将文件路径发送给客户端，以便下载
-            const downloadUrl = `https://ideasai.onrender.com/${UPLOAD_FOLDER}/${req.file.filename}.svg`;
-            res.json({ downloadUrl });
-        });
+        // 将文件路径发送给客户端，以便下载
+        const downloadUrl = `https://ideasai.onrender.com/${UPLOAD_FOLDER}/${req.file.filename}.svg`;
+        res.json({ downloadUrl });
 
     } catch (error) {
         console.error(error.response ? error.response.data : error.message);
