@@ -1,4 +1,4 @@
-# ideasAi/app.py
+# ideasAi/app.py fastapi
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from openai import OpenAI
