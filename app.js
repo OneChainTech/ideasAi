@@ -50,7 +50,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
         // 打印出从 OpenAI API 返回的响应
         console.log(response.data);
-        
+
         // AI返回的数据转换为Mermaid格式
         const mermaidData = response.data.choices[0].message.content;
 
@@ -65,7 +65,11 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         exec(`npx mmdc -i ${mermaidFilePath} -o ${svgFilePath}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`生成流程图时出错: ${error.message}`);
-                return res.status(500).json({ error: '生成流程图时出错' });
+                return res.status(500).json({
+                    error: '生成流程图时出错',
+                    details: stderr || error.message,
+                    mermaidData,
+                });
             }
             if (stderr) {
                 console.error(`stderr: ${stderr}`);
