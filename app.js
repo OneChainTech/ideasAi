@@ -6,6 +6,9 @@ const path = require('path');
 const { exec } = require('child_process');
 require('dotenv').config();
 
+const { JSDOM } = require('jsdom');
+const jsMind = require('jsmind');
+
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 
