@@ -43,40 +43,44 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
         const mindmapData = response.data.choices[0].message.content;
 
-        // 使用 Puppeteer 渲染思维导图
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
+    // 使用 Puppeteer 渲染思维导图
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
 
-        await page.setContent(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <script src="https://cdn.jsdelivr.net/npm/jsmind@latest"></script>
-            </head>
-            <body>
-                <div id="jsmind_container"></div>
-                <script>
-                    const options = {
-                        container: 'jsmind_container',
-                        theme: 'primary',
-                        editable: false
-                    };
-                    const mindmapData = ${JSON.stringify(mindmapData)};
-                    const jm = new jsMind(options);
-                    jm.show(mindmapData);
-                </script>
-            </body>
-            </html>
-        `);
+    await page.setContent(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <script src="https://cdn.jsdelivr.net/npm/jsmind@latest"></script>
+        </head>
+        <body>
+            <div id="jsmind_container"></div>
+            <script>
+                const options = {
+                    container: 'jsmind_container',
+                    theme: 'primary',
+                    editable: false
+                };
+                const mindmapData = ${JSON.stringify(mindmapData)};
+                const jm = new jsMind(options);
+                jm.show(mindmapData);
+            </script>
+        </body>
+        </html>
+    `);
 
-        const svgContent = await page.$eval('#jsmind_container', el => el.innerHTML);
-        await browser.close();
+    // 等待思维导图渲染完成
+    await page.waitForSelector('.jsmind-inner');
 
-        const mindmapFilePath = path.join(UPLOAD_FOLDER, `${req.file.filename}.svg`);
-        fs.writeFileSync(mindmapFilePath, svgContent);
+    // 截取思维导图的截图
+    const mindmapFilePath = path.join(UPLOAD_FOLDER, `${req.file.filename}.png`);
+    const element = await page.$('#jsmind_container');
+    await element.screenshot({ path: mindmapFilePath });
 
-        const downloadUrl = `https://ideasai.onrender.com/${UPLOAD_FOLDER}/${req.file.filename}.svg`;
-        res.json({ downloadUrl });
+    await browser.close();
+
+    const downloadUrl = `https://ideasai.onrender.com/${UPLOAD_FOLDER}/${req.file.filename}.png`;
+    res.json({ downloadUrl });
 
     } catch (error) {
         console.error(error.response ? error.response.data : error.message);
