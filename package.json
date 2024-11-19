@@ -14,6 +14,6 @@
       "uuid": "^9.0.0"
     },
     "devDependencies": {
-      "mermaid-cli": "^10.13.0"
+      "mermaid-cli": "^10.13.3"
     }
   }
