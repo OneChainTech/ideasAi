@@ -19,12 +19,16 @@ app.get('/', (req, res) => {
     res.json({ message: '欢迎使用 Node.js!' });
 });
 
+// 静态文件服务
+app.use('/uploads', express.static('uploads'));
+
+
 // 上传文件的路由
 app.post('/upload', upload.single('file'), async (req, res) => {
     const filePath = path.join(UPLOAD_FOLDER, req.file.filename);
     
     // 生成文件的线上地址，读取用户上传的文件
-    const imageUrl = 'https://ideasai.onrender.com/${UPLOAD_FOLDER}/${req.file.filename}'; // 修改为动态地址
+    const imageUrl = `https://ideasai.onrender.com/${UPLOAD_FOLDER}/${req.file.filename}`; // 修改为动态地址
     
     // 调用 OpenAI 接口识别图片
     try {
