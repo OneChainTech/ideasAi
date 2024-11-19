@@ -55,7 +55,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         });
 
         // AI返回的数据转换为Mermaid格式
-        const mermaidData = convertToMermaid(response.data.choices[0].message.content);
+        const mermaidData = response.data.choices[0].message.content;
 
         // 使用mermaidAPI生成SVG
         mermaidAPI.initialize({ startOnLoad: true });
@@ -67,7 +67,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
             // 将文件路径发送给客户端，以便下载
             res.json({ downloadUrl: `https://ideasai.onrender.com/${UPLOAD_FOLDER}/flowchart.svg` });
         });
-        
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: '处理请求时出错' });
