@@ -3,47 +3,37 @@ const multer = require('multer');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
+const puppeteer = require('puppeteer');
 require('dotenv').config();
-
-const { JSDOM } = require('jsdom');
-const jsMind = require('jsmind');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 
-// 设置上传文件的存储路径
 const UPLOAD_FOLDER = 'uploads';
 if (!fs.existsSync(UPLOAD_FOLDER)) {
     fs.mkdirSync(UPLOAD_FOLDER);
 }
 
-// 根路径
 app.get('/', (req, res) => {
     res.json({ message: '欢迎使用 Node.js!' });
 });
 
-// 静态文件服务
 app.use('/uploads', express.static('uploads'));
 
-// 上传文件的路由
 app.post('/upload', upload.single('file'), async (req, res) => {
     const filePath = path.join(UPLOAD_FOLDER, req.file.filename);
-    
-    // 生成文件的线上地址，读取用户上传的文件
-    const imageUrl = `https://ideasai.onrender.com/${UPLOAD_FOLDER}/${req.file.filename}`; // 修改为动态地址
-    
-    // 调用 OpenAI 接口识别图片
+    const imageUrl = `https://ideasai.onrender.com/${UPLOAD_FOLDER}/${req.file.filename}`;
+
     try {
         const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-            model: 'gpt-4', // 确保模型名称正确
+            model: 'gpt-4',
             messages: [
                 {
                     role: 'user',
-                    content: `请根据以下图片信息生成Mermaid流程图语法：图片地址：${imageUrl}`
+                    content: `请根据以下图片信息生成适合思维导图的数据结构：图片地址：${imageUrl}`
                 }
             ],
-            max_tokens: 500, // 根据需要调整
+            max_tokens: 500,
         }, {
             headers: {
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -51,38 +41,40 @@ app.post('/upload', upload.single('file'), async (req, res) => {
             },
         });
 
-        // AI返回的数据转换为jsMind支持的数据格式
         const mindmapData = response.data.choices[0].message.content;
 
-        // Simulate a browser environment with jsdom
-        const dom = new JSDOM(`<!DOCTYPE html><html><body><div id="jsmind_container"></div></body></html>`);
-        const window = dom.window;
-        const document = window.document;
+        // 使用 Puppeteer 渲染思维导图
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
 
-        // Provide the simulated window and document to jsMind
-        global.window = window;
-        global.document = document;
-        // You might need to mock other window properties that jsMind expects
-        // For example:
-        // global.navigator = window.navigator;
+        await page.setContent(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <script src="https://cdn.jsdelivr.net/npm/jsmind@latest"></script>
+            </head>
+            <body>
+                <div id="jsmind_container"></div>
+                <script>
+                    const options = {
+                        container: 'jsmind_container',
+                        theme: 'primary',
+                        editable: false
+                    };
+                    const mindmapData = ${JSON.stringify(mindmapData)};
+                    const jm = new jsMind(options);
+                    jm.show(mindmapData);
+                </script>
+            </body>
+            </html>
+        `);
 
-        // Initialize jsMind with the simulated DOM
-        const options = {
-            container: 'jsmind_container',
-            theme: 'primary',
-            editable: false
-        };
-        const jm = new jsMind(options);
-        jm.show(mindmapData);
+        const svgContent = await page.$eval('#jsmind_container', el => el.innerHTML);
+        await browser.close();
 
-        // 获取思维导图的 SVG 内容
-        const svgContent = jm.get_svg();
-
-        // 将SVG内容写入文件
         const mindmapFilePath = path.join(UPLOAD_FOLDER, `${req.file.filename}.svg`);
         fs.writeFileSync(mindmapFilePath, svgContent);
 
-        // 将文件路径发送给客户端，以便下载
         const downloadUrl = `https://ideasai.onrender.com/${UPLOAD_FOLDER}/${req.file.filename}.svg`;
         res.json({ downloadUrl });
 
@@ -92,7 +84,6 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-// 启动服务器
 const PORT = 8000;
 app.listen(PORT, () => {
     console.log(`服务器正在运行，访问地址: http://localhost:${PORT}`);
