@@ -54,11 +54,19 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         // AI返回的数据转换为jsMind支持的数据格式
         const mindmapData = response.data.choices[0].message.content;
 
-        // 创建一个新的 JSDOM 实例来模拟浏览器环境
-        const dom = new JSDOM(`<!DOCTYPE html><body><div id="jsmind_container"></div></body>`);
-        global.document = dom.window.document;
+        // Simulate a browser environment with jsdom
+        const dom = new JSDOM(`<!DOCTYPE html><html><body><div id="jsmind_container"></div></body></html>`);
+        const window = dom.window;
+        const document = window.document;
 
-        // 初始化 jsMind
+        // Provide the simulated window and document to jsMind
+        global.window = window;
+        global.document = document;
+        // You might need to mock other window properties that jsMind expects
+        // For example:
+        // global.navigator = window.navigator;
+
+        // Initialize jsMind with the simulated DOM
         const options = {
             container: 'jsmind_container',
             theme: 'primary',
