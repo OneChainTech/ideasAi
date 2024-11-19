@@ -23,8 +23,8 @@ app.get('/', (req, res) => {
 app.post('/upload', upload.single('file'), async (req, res) => {
     const filePath = path.join(UPLOAD_FOLDER, req.file.filename);
     
-    // 生成文件的线上地址52.41.36.82 54.191.253.12 44.226.122.3
-    const imageUrl = `http://52.41.36.82:8000/${UPLOAD_FOLDER}/${req.file.filename}`;
+    // 生成文件的线上地址，已写死为指定的图片地址
+    const imageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"; // 修改为固定地址
     
     // 调用 OpenAI 接口识别图片
     try {
