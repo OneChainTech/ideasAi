@@ -38,7 +38,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
                 {
                     role: 'user',
                     content: [
-                        { type: 'text', text: "What's in this image?" },
+                        { type: 'text', text: "识别图片信息 根据图片信息生成Mermaid可以使用的数据结构" },
                         {
                             type: 'image_url',
                             image_url: { url: imageUrl },
@@ -54,16 +54,26 @@ app.post('/upload', upload.single('file'), async (req, res) => {
             },
         });
 
-        // 返回识别结果
-        res.json({
-            image_url: imageUrl,
-            description: response.data.choices[0].message.content,
+        // AI返回的数据转换为Mermaid格式
+        const mermaidData = convertToMermaid(response.data.choices[0].message.content);
+
+        // 使用mermaidAPI生成SVG
+        mermaidAPI.initialize({ startOnLoad: true });
+        mermaidAPI.render('mermaid', mermaidData, (svgCode) => {
+            // 将SVG代码保存为文件
+            const svgFilePath = path.join(UPLOAD_FOLDER, 'flowchart.svg');
+            fs.writeFileSync(svgFilePath, svgCode);
+
+            // 将文件路径发送给客户端，以便下载
+            res.json({ downloadUrl: `https://ideasai.onrender.com/${UPLOAD_FOLDER}/flowchart.svg` });
         });
+        
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: '处理请求时出错' });
     }
 });
+
 
 // 启动服务器
 const PORT = 8000;
