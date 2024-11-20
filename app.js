@@ -30,7 +30,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
                 {
                     role: 'user',
                     content: [
-                        { type: "text", text: "请分析下图片内容。" },
+                        { type: "text", text: "请分析下图片内容。根据图片内容生成Mermaid格式的结构化数据" },
                         {
                             type: "image_url",
                             image_url: {
