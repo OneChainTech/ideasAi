@@ -25,11 +25,19 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
     try {
         const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-            model: 'gpt-4',
+            model: 'gpt-4o',
             messages: [
                 {
                     role: 'user',
-                    content: `请分析这张图片，并生成Mermaid格式的流程图或者思维导图数据。请确保生成的数据符合Mermaid语法规范。图片地址：${imageUrl}`
+                    content: [
+                        { type: "text", text: "请分析下图片内容。" },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                "url": imageUrl
+                            },
+                        }
+                    ]
                 }
             ],
             max_tokens: 500,
@@ -40,8 +48,8 @@ app.post('/upload', upload.single('file'), async (req, res) => {
             },
         });
 
-        const mermaidData = response.data.choices[0].message.content;
-        res.json({ mermaidData });
+        const analysisResult = response.data.choices[0].message.content;
+        res.json({ analysisResult });
 
     } catch (error) {
         console.error(error.response ? error.response.data : error.message);
