@@ -3,7 +3,6 @@ const multer = require('multer');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const puppeteer = require('puppeteer');
 require('dotenv').config();
 
 const app = express();
@@ -30,7 +29,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
             messages: [
                 {
                     role: 'user',
-                    content: `请根据以下图片信息生成适合思维导图的数据结构：图片地址：${imageUrl}`
+                    content: `请分析这张图片，并生成Mermaid格式的思维导图数据。请确保生成的数据符合Mermaid语法规范。图片地址：${imageUrl}`
                 }
             ],
             max_tokens: 500,
@@ -41,46 +40,8 @@ app.post('/upload', upload.single('file'), async (req, res) => {
             },
         });
 
-        const mindmapData = response.data.choices[0].message.content;
-
-    // 使用 Puppeteer 渲染思维导图
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-
-    await page.setContent(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <script src="https://cdn.jsdelivr.net/npm/jsmind@latest"></script>
-        </head>
-        <body>
-            <div id="jsmind_container"></div>
-            <script>
-                const options = {
-                    container: 'jsmind_container',
-                    theme: 'primary',
-                    editable: false
-                };
-                const mindmapData = ${JSON.stringify(mindmapData)};
-                const jm = new jsMind(options);
-                jm.show(mindmapData);
-            </script>
-        </body>
-        </html>
-    `);
-
-    // 等待思维导图渲染完成
-    await page.waitForSelector('.jsmind-inner');
-
-    // 截取思维导图的截图
-    const mindmapFilePath = path.join(UPLOAD_FOLDER, `${req.file.filename}.png`);
-    const element = await page.$('#jsmind_container');
-    await element.screenshot({ path: mindmapFilePath });
-
-    await browser.close();
-
-    const downloadUrl = `https://ideasai.onrender.com/${UPLOAD_FOLDER}/${req.file.filename}.png`;
-    res.json({ downloadUrl });
+        const mermaidData = response.data.choices[0].message.content;
+        res.json({ mermaidData });
 
     } catch (error) {
         console.error(error.response ? error.response.data : error.message);
