@@ -20,7 +20,7 @@ app.get('/', (req, res) => {
 app.use('/uploads', express.static('uploads'));
 
 app.post('/upload', upload.single('file'), async (req, res) => {
-    const filePath = path.join(UPLOAD_FOLDER, req.file.filename);
+    // const filePath = path.join(UPLOAD_FOLDER, req.file.filename);
     const imageUrl = `https://ideasai.onrender.com/${UPLOAD_FOLDER}/${req.file.filename}`;
 
     try {
@@ -31,6 +31,44 @@ app.post('/upload', upload.single('file'), async (req, res) => {
                     role: 'user',
                     content: [
                         { type: "text", text: "请仔细分析提供的图片，准确提取其中的所有信息和结构。根据分析结果，仅返回符合Mermaid语法的流程图或思维导图代码。请确保代码组织良好，以便更好地将手稿渲染成Mermaid流程图或思维导图。不要包含任何其他文字说明。请使用代码块包裹Mermaid代码。" },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                "url": imageUrl
+                            },
+                        }
+                    ]
+                }
+            ],
+            max_tokens: 500,
+        }, {
+            headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const analysisResult = response.data.choices[0].message.content;
+        res.json({ analysisResult });
+
+    } catch (error) {
+        console.error(error.response ? error.response.data : error.message);
+        res.status(500).json({ error: '处理请求时出错' });
+    }
+});
+
+app.post('/uploadMd', upload.single('file'), async (req, res) => {
+    // const filePath = path.join(UPLOAD_FOLDER, req.file.filename);
+    const imageUrl = `https://ideasai.onrender.com/${UPLOAD_FOLDER}/${req.file.filename}`;
+
+    try {
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: 'gpt-4o',
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        { type: "text", text: "请仔细分析提供的图片内容，提取其中的所有信息和结构，并将其转化为符合Markdown语法的代码。确保代码清晰、层次分明、语法正确，以便能够精准渲染为Markdown文档格式。仅返回Markdown代码，不包含任何额外说明。使用代码块包裹生成的Markdown代码。" },
                         {
                             type: "image_url",
                             image_url: {
